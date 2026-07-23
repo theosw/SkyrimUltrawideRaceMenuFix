@@ -1,6 +1,7 @@
 build/
 build-se/
 build-clangd/
+dist/
 .vs/
 out/
 *.user
