@@ -2,6 +2,11 @@
 
 SKSE plugin that fixes the character creation camera on ultrawide displays.
 
+![Before and after at 32:9](docs/BeforeAfterRaceMenu.png)
+
+*Before/after at 5120×1440. Note: the BEFORE body shot is already the farthest
+the vanilla menu can zoom out.*
+
 ## The bug
 
 On any display wider than 16:9, the character creation camera
