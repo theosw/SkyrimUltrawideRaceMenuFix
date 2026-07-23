@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "ultrawide-chargen-camera-fix",
+  "license": "GPL-3.0-only",
+  "features": {
+    "commonlibsse-ng": {
+      "description": "Dependencies of CommonLibSSE-NG",
+      "dependencies": ["catch2", "fmt", "directxtk", "rapidcsv", "spdlog"]
+    }
+  },
+  "default-features": ["commonlibsse-ng"],
+  "dependencies": [
+    "simpleini"
+  ],
+  "builtin-baseline": "1dc5ee30eb1032221d29f281f4a94b73f06b4284"
+}

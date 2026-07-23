@@ -1,0 +1,6 @@
+build/
+build-se/
+build-clangd/
+.vs/
+out/
+*.user
