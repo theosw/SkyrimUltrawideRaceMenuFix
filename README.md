@@ -56,6 +56,10 @@ cmake --preset AE
 cmake --build build --config Release
 ```
 
-Uses [CommonLibSSE-NG](https://github.com/CharmedBaryon/CommonLibSSE-NG); point
-`UCCF_COMMONLIBSSE_NG_DIR` at a checkout. Dependencies resolve through vcpkg
-(`VCPKG_ROOT` must be set).
+Uses [CommonLibSSE-NG](https://github.com/CharmedBaryon/CommonLibSSE-NG) (MIT);
+point `UCCF_COMMONLIBSSE_NG_DIR` at a checkout. Dependencies resolve through
+vcpkg (`VCPKG_ROOT` must be set).
+
+## License
+
+[GPL-3.0](LICENSE)
