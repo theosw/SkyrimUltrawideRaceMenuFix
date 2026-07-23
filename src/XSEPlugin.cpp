@@ -79,6 +79,7 @@ namespace
 			const auto now = std::chrono::steady_clock::now();
 			if (now - s_lastUpdate > 2s) {
 				g_settings.Load();
+				s_haveOffsetCache = false;
 			}
 			s_lastUpdate = now;
 
@@ -106,49 +107,74 @@ namespace
 
 			const RE::NiPoint3 enginePos = root->local.translate;
 
-			const float scale = DistanceScale(root);
-			RE::NiPoint3 head;
-			if (std::abs(scale - 1.0f) < 0.01f || !HeadPosition(head)) {
-				s_haveShadow = false;
-				return;
-			}
+			// The engine only moves this camera on zoom changes and menu
+			// transitions; while it holds still, hold our correction still
+			// too, so idle-animation sway of the head bone cannot wiggle the
+			// amplified camera.
+			RE::NiPoint3 fixedPos;
+			if (s_haveOffsetCache && Nearly(enginePos, s_cachedEnginePos)) {
+				fixedPos = s_cachedFixedPos;
+			} else {
+				const float scale = DistanceScale(root);
+				RE::NiPoint3 head;
+				if (std::abs(scale - 1.0f) < 0.01f || !HeadPosition(head)) {
+					s_haveShadow = false;
+					s_haveOffsetCache = false;
+					return;
+				}
 
-			const RE::NiPoint3 toHead = head - enginePos;
-			const float distance = toHead.Length();
-			if (distance < 1.0f) {
-				s_haveShadow = false;
-				return;
-			}
+				const RE::NiPoint3 toHead = head - enginePos;
+				const float distance = toHead.Length();
+				if (distance < 1.0f) {
+					s_haveShadow = false;
+					s_haveOffsetCache = false;
+					return;
+				}
 
-			// The camera looks at (roughly) the head. Find which rotated local
-			// axis is the view direction instead of assuming a convention.
-			const RE::NiPoint3 axes[3] = {
-				root->local.rotate * RE::NiPoint3{ 1.0f, 0.0f, 0.0f },
-				root->local.rotate * RE::NiPoint3{ 0.0f, 1.0f, 0.0f },
-				root->local.rotate * RE::NiPoint3{ 0.0f, 0.0f, 1.0f },
-			};
-			RE::NiPoint3 forward = axes[1];
-			float best = 0.0f;
-			for (const auto& axis : axes) {
-				const float alignment = axis.Dot(toHead) / distance;
-				if (std::abs(alignment) > std::abs(best)) {
-					best = alignment;
-					forward = axis;
+				// The camera looks at (roughly) the head. Find which rotated
+				// local axis is the view direction instead of assuming a
+				// convention.
+				const RE::NiPoint3 axes[3] = {
+					root->local.rotate * RE::NiPoint3{ 1.0f, 0.0f, 0.0f },
+					root->local.rotate * RE::NiPoint3{ 0.0f, 1.0f, 0.0f },
+					root->local.rotate * RE::NiPoint3{ 0.0f, 0.0f, 1.0f },
+				};
+				RE::NiPoint3 forward = axes[1];
+				float best = 0.0f;
+				for (const auto& axis : axes) {
+					const float alignment = axis.Dot(toHead) / distance;
+					if (std::abs(alignment) > std::abs(best)) {
+						best = alignment;
+						forward = axis;
+					}
+				}
+				if (best < 0.0f) {
+					forward = -forward;
+				}
+
+				const float depth = forward.Dot(toHead);
+				if (depth < 1.0f) {
+					s_haveShadow = false;
+					s_haveOffsetCache = false;
+					return;
+				}
+
+				// Push straight back along the view axis: on-axis distance
+				// becomes scale * depth, lateral placement stays untouched.
+				fixedPos = enginePos - forward * ((scale - 1.0f) * depth);
+				s_cachedEnginePos = enginePos;
+				s_cachedFixedPos = fixedPos;
+				s_haveOffsetCache = true;
+
+				if (g_settings.verboseLog && (s_frame++ % 60) == 0) {
+					logger::info(
+						"scale={:.3f} depth={:.1f} head=({:.1f} {:.1f} {:.1f}) engine=({:.1f} {:.1f} {:.1f}) fixed=({:.1f} {:.1f} {:.1f})",
+						scale, depth, head.x, head.y, head.z,
+						enginePos.x, enginePos.y, enginePos.z,
+						fixedPos.x, fixedPos.y, fixedPos.z);
 				}
 			}
-			if (best < 0.0f) {
-				forward = -forward;
-			}
 
-			const float depth = forward.Dot(toHead);
-			if (depth < 1.0f) {
-				s_haveShadow = false;
-				return;
-			}
-
-			// Push straight back along the view axis: on-axis distance becomes
-			// scale * depth, lateral placement stays untouched.
-			const RE::NiPoint3 fixedPos = enginePos - forward * ((scale - 1.0f) * depth);
 			root->local.translate = fixedPos;
 			RE::NiUpdateData updateData{};
 			root->Update(updateData);
@@ -156,14 +182,6 @@ namespace
 			s_enginePos = enginePos;
 			s_shownPos = fixedPos;
 			s_haveShadow = true;
-
-			if (g_settings.verboseLog && (s_frame++ % 60) == 0) {
-				logger::info(
-					"scale={:.3f} depth={:.1f} head=({:.1f} {:.1f} {:.1f}) engine=({:.1f} {:.1f} {:.1f}) fixed=({:.1f} {:.1f} {:.1f})",
-					scale, depth, head.x, head.y, head.z,
-					enginePos.x, enginePos.y, enginePos.z,
-					fixedPos.x, fixedPos.y, fixedPos.z);
-			}
 		}
 
 		static float DistanceScale(RE::NiNode* a_root)
@@ -231,6 +249,9 @@ namespace
 		static inline bool s_haveShadow = false;
 		static inline RE::NiPoint3 s_enginePos{};
 		static inline RE::NiPoint3 s_shownPos{};
+		static inline bool s_haveOffsetCache = false;
+		static inline RE::NiPoint3 s_cachedEnginePos{};
+		static inline RE::NiPoint3 s_cachedFixedPos{};
 		static inline std::uint32_t s_frame = 0;
 		static inline std::chrono::steady_clock::time_point s_lastUpdate{};
 	};
