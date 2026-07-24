@@ -111,12 +111,16 @@ if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
 	list(APPEND UCCF_OUTPUT_FOLDERS "${SKYRIM_MODS_FOLDER_STRIPPED}/UltrawideChargenCameraFix")
 endif()
 # "[No Delete]" keeps the mod safe across Wabbajack list updates. Deploys to
-# every install found (LoreRim 5.x at D:/Lorerim, legacy 4.x install).
-foreach(_mods_dir "D:/Lorerim/mods" "D:/Games/US SSE/Lorerim/game-files/mods")
-	if(IS_DIRECTORY "${_mods_dir}")
-		list(APPEND UCCF_OUTPUT_FOLDERS "${_mods_dir}/[No Delete] Ultrawide Chargen Camera Fix")
-	endif()
-endforeach()
+# every install found (LoreRim 5.x at D:/Lorerim, legacy 4.x install). Both
+# installs run the AE runtime, so only the AE build may deploy — an SE build
+# deploying here would ship a DLL the game refuses to load.
+if(ENABLE_SKYRIM_AE)
+	foreach(_mods_dir "D:/Lorerim/mods" "D:/Games/US SSE/Lorerim/game-files/mods")
+		if(IS_DIRECTORY "${_mods_dir}")
+			list(APPEND UCCF_OUTPUT_FOLDERS "${_mods_dir}/[No Delete] Ultrawide Chargen Camera Fix")
+		endif()
+	endforeach()
+endif()
 
 foreach(UCCF_OUTPUT_FOLDER IN LISTS UCCF_OUTPUT_FOLDERS)
 	set(UCCF_DEPLOY_PLUGIN_FOLDER "${UCCF_OUTPUT_FOLDER}/SKSE/Plugins")
