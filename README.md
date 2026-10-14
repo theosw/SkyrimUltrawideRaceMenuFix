@@ -54,6 +54,15 @@ Details:
 - Skyrim SE/AE with [SKSE64](https://skse.silverlock.org/)
 - [Address Library for SKSE Plugins](https://www.nexusmods.com/skyrimspecialedition/mods/32444)
 
+### Skyrim 1.7.104
+
+Skyrim 1.7.104 requires SKSE64 2.3.1 and the matching
+`versionlib-1-7-104-0.bin`. This project pins
+[CommonLibSSE-NG v11.0.0](https://github.com/alandtse/CommonLibSSE-NG/releases/tag/v11.0.0),
+which can read that runtime's format-5 Address Library database. See
+[`docs/1.7.104-validation.md`](docs/1.7.104-validation.md) for the tested build,
+static hook check, and runtime smoke evidence.
+
 ## Building
 
 ```
@@ -61,9 +70,10 @@ cmake --preset AE
 cmake --build build --config Release
 ```
 
-Uses [CommonLibSSE-NG](https://github.com/CharmedBaryon/CommonLibSSE-NG) (MIT);
-point `UCCF_COMMONLIBSSE_NG_DIR` at a checkout. Dependencies resolve through
-vcpkg (`VCPKG_ROOT` must be set).
+The default configure fetches the pinned CommonLibSSE-NG revision. To use an
+existing checkout instead, pass
+`-D UCCF_COMMONLIBSSE_NG_DIR=<path-to-CommonLibSSE-NG>`. Other dependencies
+resolve through vcpkg (`VCPKG_ROOT` must be set).
 
 ## License
 

@@ -66,25 +66,39 @@ if(CMAKE_GENERATOR MATCHES "Visual Studio")
 	)
 endif()
 
-# Shared local checkout: by default reuse the FrameGenTest workspace's
-# CommonLibSSE-NG so this builds against the same dependency as FableFG.
-# Override with -D to make this repo standalone.
+# CommonLibSSE-NG v11.0.0 adds support for the format-5 Address Library
+# databases used by Skyrim 1.7.x. Keep the exact revision reproducible while
+# allowing developers to use an existing checkout when working offline.
 set(
 	UCCF_COMMONLIBSSE_NG_DIR
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FrameGenTest/extern/CommonLibSSE-NG"
+	""
 	CACHE PATH
-	"Path to a CommonLibSSE-NG checkout"
+	"Optional path to a CommonLibSSE-NG checkout"
 )
 
-if(NOT EXISTS "${UCCF_COMMONLIBSSE_NG_DIR}/CMakeLists.txt")
-	message(
-		FATAL_ERROR
-		"CommonLibSSE-NG was not found at '${UCCF_COMMONLIBSSE_NG_DIR}'. "
-		"Clone it there or configure with -D UCCF_COMMONLIBSSE_NG_DIR=<path>."
-	)
-endif()
+if(UCCF_COMMONLIBSSE_NG_DIR)
+	if(NOT EXISTS "${UCCF_COMMONLIBSSE_NG_DIR}/CMakeLists.txt")
+		message(
+			FATAL_ERROR
+			"CommonLibSSE-NG was not found at '${UCCF_COMMONLIBSSE_NG_DIR}'."
+		)
+	endif()
 
-add_subdirectory("${UCCF_COMMONLIBSSE_NG_DIR}" CommonLibSSE EXCLUDE_FROM_ALL)
+	add_subdirectory(
+		"${UCCF_COMMONLIBSSE_NG_DIR}"
+		"${CMAKE_CURRENT_BINARY_DIR}/_deps/commonlibsse-build"
+		EXCLUDE_FROM_ALL
+	)
+else()
+	include(FetchContent)
+	FetchContent_Declare(
+		CommonLibSSE
+		GIT_REPOSITORY https://github.com/alandtse/CommonLibSSE-NG.git
+		GIT_TAG 94faaed0c60eddd8347767f2d4d29a97c93bde8c # v11.0.0
+		GIT_SUBMODULES_RECURSE TRUE
+	)
+	FetchContent_MakeAvailable(CommonLibSSE)
+endif()
 
 find_package(spdlog CONFIG REQUIRED)
 
